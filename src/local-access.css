@@ -1,0 +1,21 @@
+.local-access { width: 100%; margin-top: 26px; }
+.local-access-heading h2 { font-size: 17px; font-weight: 600; letter-spacing: -.3px; margin: 0 0 8px; }
+.local-access-heading p { font-size: 13px; line-height: 1.7; color: var(--muted); margin: 0 0 20px; }
+.local-access-fields { display: grid; gap: 14px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.password-visibility { min-height: 44px; width: 36px; margin: -8px -6px -5px 0; }
+.password-hint { font-size: 12px; line-height: 1.6; color: var(--muted); margin: -5px 0 0; }
+.local-submit { width: 100%; margin-top: 20px; }
+.local-toggle { font-size: 13px; line-height: 1.8; color: var(--muted); margin: 18px 0 0; text-align: center; }
+.local-toggle button,.alternative-login { border: 0; background: none; color: var(--accent); padding: 8px 4px; min-height: 44px; font-size: 13px; font-weight: 550; }
+.local-toggle button:hover,.alternative-login:hover { text-decoration: underline; text-underline-offset: 4px; }
+.local-account-help { font-size: 12px; line-height: 1.75; color: var(--muted); margin: 16px 0 0; }
+.alternative-login-row { text-align: center; padding-top: 14px; margin-top: 16px; border-top: 1px solid var(--line); }
+.google-method-note { font-size: 13px; line-height: 1.7; color: var(--muted); }
+.account-panel { max-width: 620px; padding: 28px; border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface); box-shadow: var(--shadow-sm); }
+.account-heading { display: flex; gap: 14px; align-items: flex-start; color: var(--accent); }
+.account-heading h2 { font-size: 18px; font-weight: 600; letter-spacing: -.4px; margin: 0 0 9px; color: var(--text); }
+.account-heading p { color: var(--muted); font-size: 13px; line-height: 1.7; margin: 0; }
+.account-identity { display: grid; gap: 6px; padding: 16px 18px; background: var(--accent-soft); border-radius: var(--radius-control); margin: 24px 0; }
+.account-identity strong { font-size: 14px; font-weight: 550; overflow-wrap: anywhere; }
+.account-identity span { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+@media(max-width:600px) { .local-access-fields input { font-size: 16px; } .account-panel { padding: 22px 18px; } .password-visibility { width: 44px; } }
