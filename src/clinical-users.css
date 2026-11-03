@@ -107,6 +107,7 @@
 
 .clinical-modal { width: min(920px,calc(100vw - 64px)); max-width: none; max-height: calc(100dvh - 64px); padding: 0; border: 1px solid var(--border); border-radius: 20px; background: var(--background); color: var(--text); box-shadow: 0 24px 80px var(--modal-shadow); overflow: hidden; }
 .clinical-modal[open] { display: flex; flex-direction: column; }
+.clinical-modal:not(.form-modal) { height: min(820px,calc(100dvh - 64px)); }
 .clinical-modal::backdrop { background: var(--overlay); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 .clinical-modal-header { padding: 24px 28px 0; background: var(--surface); border-bottom: 1px solid var(--line); flex-shrink: 0; }
 .modal-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
@@ -121,7 +122,7 @@
 .record-tabs button[aria-pressed=true] { color: var(--accent); border-bottom-color: var(--accent); }
 .record-tabs button:hover { color: var(--accent); }
 .clinical-modal-header .back-button { margin-block: 12px 8px; min-height: 44px; }
-.clinical-modal-body { padding: 24px 28px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scroll-padding-block: 16px; container-type: inline-size; }
+.clinical-modal-body { padding: 24px 28px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scroll-padding-block: 16px; scrollbar-gutter: stable; container-type: inline-size; }
 .modal-clinical-detail .clinical-section { padding: 20px; margin-bottom: 14px; }
 .modal-clinical-detail .clinical-section:last-child { margin-bottom: 0; }
 .modal-clinical-detail h3 { margin: 0; font-size: 14px; color: var(--accent-strong); font-weight: 600; }
@@ -147,6 +148,7 @@
 .empty-sessions p { color: var(--muted); font-size: 14px; line-height: 1.6; }
 @media(max-width:600px) {
   .clinical-modal { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border-radius: 16px; }
+  .clinical-modal:not(.form-modal) { height: calc(100dvh - 24px); }
   .clinical-modal-header { padding: 20px 18px 0; }
   .clinical-modal-body { padding: 20px 16px; }
   .clinical-modal h2 { font-size: 22px; }

@@ -3,6 +3,7 @@ import { ArrowLeft, ChevronRight, Download, FileText, Pencil, Plus, Save } from 
 import { reportApi } from './api';
 import { maxReportText, reportFields, validateReportContent } from '../shared/report-fields';
 import { ClinicalNotes } from './ClinicalNotes';
+import { useViewData } from './ViewData';
 import './reports.css';
 const dateLabel = value => new Intl.DateTimeFormat('es-CL', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`));
 const periodLabel = report => `${dateLabel(report.periodStart)} al ${dateLabel(report.periodEnd)}`;
@@ -71,23 +72,27 @@ function ReportEditor({ report, onSave, onCancel, onDirtyChange, onBusyChange })
 }
 export function ReportsPanel({ id, reportId, editing, navigate, onDirtyChange, onBusyChange, service = reportApi }) {
   const base = `/usuarios/${id}/informes`;
-  const [list, setList] = useState(null);
   const [report, setReport] = useState(null);
   const [page, setPage] = useState(1);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
+  const [detailBusy, setBusy] = useState(false);
+  const [detailError, setError] = useState(null);
   const [notice, setNotice] = useState('');
   const [working, setWorking] = useState(false);
   const handleBusy = value => { setWorking(value); onBusyChange(value); };
   const [refresh, setRefresh] = useState(0);
+  const detail = Boolean(reportId && reportId !== 'nuevo');
+  const { data: list, loading: listBusy, error: listError } = useViewData(service, JSON.stringify(['reports', id, page]), signal => service.list(id, { page, signal }), { refresh, enabled: !detail });
+  const busy = detail ? detailBusy : listBusy && !list;
+  const error = detailError || listError;
   const headingRef = useRef(null);
   useEffect(() => { headingRef.current?.focus(); }, [reportId, editing]);
   useEffect(() => {
-    const controller = new AbortController(); let active = true; setBusy(true); setError(null); setReport(null);
-    const load = reportId && reportId !== 'nuevo' ? service.get(id, reportId, controller.signal) : service.list(id, { page, signal: controller.signal });
-    load.then(data => { if (active) { if (data.report) setReport(data.report); else setList(data); } }).catch(err => { if (active && err.name !== 'AbortError') setError(err); }).finally(() => { if (active) setBusy(false); });
+    setError(null); setReport(null);
+    if (!detail) { setBusy(false); return; }
+    const controller = new AbortController(); let active = true; setBusy(true);
+    service.get(id, reportId, controller.signal).then(data => { if (active) setReport(data.report); }).catch(err => { if (active && err.name !== 'AbortError') setError(err); }).finally(() => { if (active) setBusy(false); });
     return () => { active = false; controller.abort(); };
-  }, [id, reportId, page, refresh, service]);
+  }, [id, reportId, refresh, service, detail]);
   async function save(values) {
     const data = await service.save(id, reportId, values); onDirtyChange(false); setReport(data.report); setNotice('Informe guardado correctamente.'); navigate(`${base}/${reportId}`, true); setRefresh(v => v + 1);
   }
@@ -104,8 +109,8 @@ export function ReportsPanel({ id, reportId, editing, navigate, onDirtyChange, o
     {notice && <p className="save-notice" role="status">{notice}</p>}
     {busy && !report && <p className="data-status" role="status">Cargando informes…</p>}
     <Failure error={error} retry={!editing ? () => setRefresh(v => v + 1) : undefined}/>
-    {!busy && !error && !reportId && list && <>{!list.ai.enabled && <p className="report-callout">Para generar borradores con IA, configura la clave de OpenAI en el servidor.</p>}{list.reports.length ? <div className="report-list">{list.reports.map(row => <a className="report-card" key={row.id} href={`#${base.slice(1)}/${row.id}`} onClick={event => { event.preventDefault(); setNotice(''); navigate(`${base}/${row.id}`); }}><FileText size={21} aria-hidden="true"/><div><strong>{row.title}</strong><p>{periodLabel(row)} · {row.sessionCount} sesiones</p><span className="report-status">{row.status === 'reviewed' ? 'Revisado por terapeuta' : 'Borrador'}</span></div><ChevronRight size={18} aria-hidden="true"/></a>)}</div> : <div className="empty-sessions"><FileText size={28} aria-hidden="true"/><h3>Aún no hay informes</h3><p>Crea un borrador a partir de las sesiones de este usuario.</p></div>}{list.total > list.pageSize && <div className="pagination"><button className="secondary-button" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Anterior</button><span>Página {page} de {Math.ceil(list.total / list.pageSize)}</span><button className="secondary-button" disabled={page * list.pageSize >= list.total} onClick={() => setPage(p => p + 1)}>Siguiente</button></div>}</>}
-    {!busy && !error && reportId === 'nuevo' && list && <ReportCreate id={id} service={service} enabled={list.ai.enabled} onGenerated={created => { setNotice('Borrador generado y guardado. Revísalo antes de utilizarlo.'); navigate(`${base}/${created.id}`, true); }} onCancel={() => navigate(base)} onBusyChange={handleBusy}/>}
+    {!reportId && list && <>{!list.ai.enabled && <p className="report-callout">Para generar borradores con IA, configura la clave de OpenAI en el servidor.</p>}{list.reports.length ? <div className="report-list">{list.reports.map(row => <a className="report-card" key={row.id} href={`#${base.slice(1)}/${row.id}`} onClick={event => { event.preventDefault(); setNotice(''); navigate(`${base}/${row.id}`); }}><FileText size={21} aria-hidden="true"/><div><strong>{row.title}</strong><p>{periodLabel(row)} · {row.sessionCount} sesiones</p><span className="report-status">{row.status === 'reviewed' ? 'Revisado por terapeuta' : 'Borrador'}</span></div><ChevronRight size={18} aria-hidden="true"/></a>)}</div> : <div className="empty-sessions"><FileText size={28} aria-hidden="true"/><h3>Aún no hay informes</h3><p>Crea un borrador a partir de las sesiones de este usuario.</p></div>}{list.total > list.pageSize && <div className="pagination"><button className="secondary-button" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Anterior</button><span>Página {page} de {Math.ceil(list.total / list.pageSize)}</span><button className="secondary-button" disabled={page * list.pageSize >= list.total} onClick={() => setPage(p => p + 1)}>Siguiente</button></div>}</>}
+    {reportId === 'nuevo' && list && <ReportCreate id={id} service={service} enabled={list.ai.enabled} onGenerated={created => { setNotice('Borrador generado y guardado. Revísalo antes de utilizarlo.'); navigate(`${base}/${created.id}`, true); }} onCancel={() => navigate(base)} onBusyChange={handleBusy}/>}
     {report && (editing ? <ReportEditor key={`${report.id}-${report.version}`} report={report} onSave={save} onCancel={() => navigate(`${base}/${report.id}`)} onDirtyChange={onDirtyChange} onBusyChange={handleBusy}/> : <article className="report-document"><div className="report-document-heading"><span className="report-status">{report.status === 'reviewed' ? 'Revisado por terapeuta' : 'Borrador · pendiente de revisión'}</span><h3>{report.title}</h3><p>{periodLabel(report)} · {report.sources.length} sesiones</p><div className="report-document-actions"><button className="secondary-button" onClick={() => navigate(`${base}/${report.id}/editar`)}><Pencil size={16} aria-hidden="true"/>Revisar y editar</button><button className="secondary-button" disabled={busy} onClick={download}><Download size={16} aria-hidden="true"/>Descargar PDF</button></div></div>{reportFields.map(field => <section className="report-read-section" key={field.key}><h4>{field.label}</h4><p>{report.content[field.key].text}</p><small>{report.content[field.key].sources.length ? `Sesiones de respaldo: ${report.content[field.key].sources.join(', ')}` : 'Sin referencias registradas'}</small></section>)}<Sources sources={report.sources}/></article>)}
   </section>;
 }

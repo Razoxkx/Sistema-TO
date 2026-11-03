@@ -7,6 +7,7 @@ import { ClinicalNotes } from './ClinicalNotes';
 import { sessionLabel, sessionName } from '../shared/scheduling';
 import { PlansPanel } from './PlansPanel';
 import { ReportsPanel } from './ReportsPanel';
+import { useViewData } from './ViewData';
 
 const dateLabel = date => new Intl.DateTimeFormat('es-CL', { dateStyle: 'long', timeZone: 'America/Santiago' }).format(new Date(`${date}T12:00:00Z`));
 const amountLabel = value => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(value);
@@ -60,20 +61,12 @@ function SessionForm({ session, onSave, onCancel, onDirtyChange, onBusyChange })
 }
 function SessionHistory({ recordId, service, refresh, onEdit }) {
   const [page, setPage] = useState(1);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
-  useEffect(() => {
-    const controller = new AbortController(); let active = true;
-    setLoading(true); setError(null);
-    service.sessions(recordId, { page, signal: controller.signal }).then(data => { if (active) setResult(data); }).catch(err => { if (active && err.name !== 'AbortError') setError(err); }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; controller.abort(); };
-  }, [recordId, service, page, retry, refresh]);
-  return <section aria-label="Historial de sesiones">
-    {loading && <p role="status" className="data-status">Cargando sesiones…</p>}
+  const { data: result, error, loading } = useViewData(service, JSON.stringify(['sessions', recordId, page]), signal => service.sessions(recordId, { page, signal }), { refresh: `${retry}:${refresh}` });
+  return <section aria-label="Historial de sesiones" aria-busy={loading}>
+    {loading && !result && <p role="status" className="data-status">Cargando sesiones…</p>}
     <ServiceError error={error} retry={() => setRetry(v => v + 1)}/>
-    {!loading && !error && result && <>
+    {result && <>
       <p className="session-count">{result.total} {result.total === 1 ? 'sesión registrada' : 'sesiones registradas'}</p>
       {result.sessions.length ? <div className="session-history">{result.sessions.map(session => <article className="session-entry" key={session.id}>
         <div className="session-entry-heading"><h3><CalendarDays size={17} aria-hidden="true"/><span>{sessionName(session)}</span></h3><p className="session-amount">{session.amount == null ? session.status === 'scheduled' ? 'Por realizar' : 'Valor sin registrar' : <><span className="sr-only">Valor de la sesión: </span>{amountLabel(session.amount)}<span className="session-currency">CLP</span></>}</p></div>

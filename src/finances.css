@@ -1,4 +1,9 @@
 .finances { min-width: 0; }
+.finance-placeholder-row { display: grid; align-content: center; gap: 18px; min-height: 160px; padding: 24px; }
+.finance-placeholder-row > span { display: block; height: 12px; width: 65%; max-width: 360px; border-radius: 6px; background: var(--line); }
+.finance-placeholder-row > span:nth-child(2) { width: 45%; }
+.finance-placeholder-row > span:nth-child(3) { width: 55%; }
+.finance-loading .finance-month { cursor: default; }
 .finance-period-bar { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .finance-period-control { display: flex; align-items: center; gap: 12px; border: 1px solid var(--control-border); border-radius: var(--radius-control); background: var(--surface); padding: 8px 14px; color: var(--accent); }
 .finance-period-control:focus-within { border-color: var(--accent); box-shadow: var(--focus-ring); }
