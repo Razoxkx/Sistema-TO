@@ -4,8 +4,8 @@ COPY package*.json ./
 RUN npm ci
 
 FROM dependencies AS build
-ARG VITE_APP_ENV=production
-ENV VITE_APP_ENV=$VITE_APP_ENV
+ARG APP_GIT_BRANCH=
+ENV APP_GIT_BRANCH=$APP_GIT_BRANCH
 COPY index.html vite.config.js ./
 COPY src ./src
 COPY shared ./shared
