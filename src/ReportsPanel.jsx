@@ -85,7 +85,7 @@ export function ReportsPanel({ id, reportId, editing, navigate, onDirtyChange, o
   const busy = detail ? detailBusy : listBusy && !list;
   const error = detailError || listError;
   const headingRef = useRef(null);
-  useEffect(() => { headingRef.current?.focus(); }, [reportId, editing]);
+  useEffect(() => { headingRef.current?.focus({ preventScroll: true }); }, [reportId, editing]);
   useEffect(() => {
     setError(null); setReport(null);
     if (!detail) { setBusy(false); return; }

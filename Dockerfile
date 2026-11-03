@@ -13,6 +13,7 @@ RUN npm run build
 FROM nginx:stable-alpine AS web
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
+RUN chmod -R a+rX /usr/share/nginx/html
 EXPOSE 80
 
 FROM node:24-alpine AS api

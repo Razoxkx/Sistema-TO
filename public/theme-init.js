@@ -1,5 +1,11 @@
 // Runs before the page is painted, including when browser storage is unavailable.
 (() => {
+  const appWindow = matchMedia('(display-mode: standalone)');
+  const setDisplayMode = () => {
+    document.documentElement.dataset.displayMode = navigator.standalone === true || appWindow.matches ? 'standalone' : 'browser';
+  };
+  setDisplayMode();
+  appWindow.addEventListener('change', setDisplayMode);
   let preference = 'system';
   try {
     const saved = localStorage.getItem('espacio-theme');

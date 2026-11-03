@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Home, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Users, X, ChevronRight, ClipboardList, Wallet, CalendarDays, KeyRound } from 'lucide-react';
 import { Brand } from './Brand';
 import { ClinicalUsers } from './ClinicalUsers';
@@ -7,6 +8,7 @@ import { Calendar } from './Calendar';
 import { LocalAccount } from './LocalAccount';
 import { ThemeSelect } from './Theme';
 import { ViewDataProvider } from './ViewData';
+import { lockBodyScroll } from './modal-scroll';
 import './workspace.css';
 
 function ProfilePhoto({ user }) {
@@ -48,15 +50,16 @@ function UnsavedChangesDialog({ onStay, onLeave }) {
   const stayRef = useRef(null);
   useEffect(() => {
     const trigger = document.activeElement;
+    const unlock = lockBodyScroll();
     ref.current.showModal();
-    stayRef.current?.focus();
-    return () => trigger?.focus();
+    stayRef.current?.focus({ preventScroll: true });
+    return () => { ref.current?.close(); unlock(); trigger?.focus({ preventScroll: true }); };
   }, []);
-  return <dialog ref={ref} className="info-dialog" aria-labelledby="unsaved-title" onCancel={onStay}>
+  return createPortal(<dialog ref={ref} className="info-dialog" aria-labelledby="unsaved-title" onCancel={onStay}>
     <h2 id="unsaved-title">Cambios sin guardar</h2>
     <p>Tienes cambios sin guardar. Si sales ahora, se perderán.</p>
     <div className="form-actions"><button ref={stayRef} className="secondary-button" onClick={onStay}>Seguir editando</button><button className="primary-button" onClick={onLeave}>Descartar cambios</button></div>
-  </dialog>;
+  </dialog>, document.body);
 }
 
 export function Workspace({ user, onLogout, busy, error, clinicalService, financeService, reportService, calendarService, planService }) {
@@ -68,7 +71,9 @@ export function Workspace({ user, onLogout, busy, error, clinicalService, financ
   function navigate(path, force = false) {
     if (!force && dirtyRef.current) { setPendingLeave({ run: () => navigate(path, true) }); return false; }
     dirtyRef.current = false;
-    location.hash = path.slice(1);
+    if (document.documentElement.dataset.displayMode === 'standalone') {
+      if (readRoute() !== path) history.pushState(null, '', `#${path.slice(1)}`);
+    } else location.hash = path.slice(1);
     setRoute(path);
     return true;
   }
@@ -82,7 +87,8 @@ export function Workspace({ user, onLogout, busy, error, clinicalService, financ
       } else setRoute(next);
     };
     addEventListener('hashchange', change);
-    return () => removeEventListener('hashchange', change);
+    addEventListener('popstate', change);
+    return () => { removeEventListener('hashchange', change); removeEventListener('popstate', change); };
   }, [route]);
   useEffect(() => { document.title = `${route.startsWith('/usuarios') ? 'Usuarios' : route.startsWith('/finanzas') ? 'Finanzas' : route.startsWith('/calendario') ? 'Calendario' : route.startsWith('/cuenta') ? 'Mi cuenta' : 'Inicio'} · Espacio TO`; }, [route]);
   const [collapsed, setCollapsed] = useState(() => {
@@ -103,13 +109,12 @@ export function Workspace({ user, onLogout, busy, error, clinicalService, financ
   useEffect(() => {
     if (!mobileOpen) return;
     const dialog = dialogRef.current;
-    const previousOverflow = document.body.style.overflow;
+    const unlock = lockBodyScroll();
     dialog.showModal();
-    document.body.style.overflow = 'hidden';
     return () => {
       dialog.close();
-      document.body.style.overflow = previousOverflow;
-      menuRef.current?.focus();
+      unlock();
+      menuRef.current?.focus({ preventScroll: true });
     };
   }, [mobileOpen]);
   const closeMenu = () => setMobileOpen(false);
@@ -137,8 +142,8 @@ export function Workspace({ user, onLogout, busy, error, clinicalService, financ
       </main>
     </div>
     {pendingLeave && <UnsavedChangesDialog onStay={() => setPendingLeave(null)} onLeave={() => { const action = pendingLeave.run; setPendingLeave(null); setMobileOpen(false); dirtyRef.current = false; action(); }}/>}
-    {mobileOpen && <dialog ref={dialogRef} id="mobile-sidebar" className="sidebar mobile-sidebar" aria-label="Menú de Espacio TO" onCancel={closeMenu} onClick={event => { if (event.target === dialogRef.current && event.clientX >= dialogRef.current.getBoundingClientRect().right) closeMenu(); }}>
+    {mobileOpen && createPortal(<dialog ref={dialogRef} id="mobile-sidebar" className="sidebar mobile-sidebar" aria-label="Menú de Espacio TO" onCancel={closeMenu} onClick={event => { if (event.target === dialogRef.current && event.clientX >= dialogRef.current.getBoundingClientRect().right) closeMenu(); }}>
       <SidebarContent {...shared} mobile/>
-    </dialog>}
+    </dialog>, document.body)}
   </div></ViewDataProvider>;
 }

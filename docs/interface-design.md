@@ -57,3 +57,27 @@ El selector de apariencia está disponible en el inicio de sesión y en el encab
 El tema oscuro utiliza fondos verde bosque, superficies elevadas y acentos salvia de la misma familia clínica. Texto, etiquetas, bordes de controles, errores, confirmaciones, ilustración y superposiciones usan variables semánticas. Los botones principales tienen un color de texto propio para conservar contraste sobre el acento claro. Los controles nativos de fecha, hora y mes reciben `color-scheme`; el botón Google usa sus [variantes oficiales](https://developers.google.com/identity/gsi/web/reference/js-reference#theme) según el tema. El PDF conserva su presentación clínica para impresión.
 
 En smartphone el selector ocupa un control de 44 × 44 px con nombre accesible y opciones nativas; no desplaza el menú ni las migas de navegación. Los campos de búsqueda usan 16 px para evitar el zoom al enfocar en iPhone. Cambiar de tema conserva los formularios abiertos y sus cambios pendientes.
+
+## Estabilidad al navegar
+
+La ficha conserva una altura estable entre Ficha clínica, Sesiones, Informes y Planificaciones; solo se desplaza su contenido. Los formularios secundarios de agenda y asignación mantienen su tamaño compacto. Se reserva el espacio de las barras de desplazamiento para evitar movimientos horizontales.
+
+Las listas de usuarios, sesiones, informes, planificaciones, calendario y finanzas conservan su última respuesta en memoria durante la visita del terapeuta. Al volver se muestran inmediatamente y se consultan de nuevo en segundo plano. La memoria se separa por servicio y consulta, con un máximo de treinta consultas por servicio; se descarta al cerrar sesión o cambiar de terapeuta y se limpia ante un error de autenticación. No se escribe información clínica en almacenamiento persistente del navegador. Las respuestas de consultas canceladas no reemplazan la vista actual.
+
+Finanzas agrupa los eventos de foco y visibilidad de un mismo regreso al navegador. Un período nuevo muestra la estructura de resumen e historial durante la carga, sin atribuir valores del mes anterior al mes seleccionado. El calendario conserva la cuadrícula durante la consulta. El logotipo navega dentro de la aplicación y respeta el aviso de cambios pendientes.
+
+Verificación con respuestas sintéticas de 1,6 segundos: regreso a Finanzas sin ocultar sus importes, cambio rápido de meses, pestañas de la ficha sin redimensionado, conservación del último resultado ante un error de red y limpieza al recibir 401. El modal mantiene 656 px de altura y 32 px de margen superior en 1280 × 720, y 820 px con 12 px de margen en 390 × 844, sin desbordamiento horizontal.
+
+## Acceso directo en la pantalla de inicio
+
+El arranque identifica `display-mode: standalone` y el indicador de iOS `navigator.standalone`, sin usar el modelo del dispositivo. Esta modalidad se diferencia de abrir la web en Safari. La instalación declara nombre, ámbito, URL inicial e iconos en `site.webmanifest`; no añade funcionamiento sin conexión ni almacenamiento de fichas.
+
+En modo app, el desenfoque se aplica a la superficie estática del espacio de trabajo. Los diálogos se renderizan mediante portales bajo `body`, fuera de esa superficie, y su `::backdrop` conserva únicamente el oscurecimiento. Así los cambios de contenido de la ficha no requieren recalcular el filtro del fondo del diálogo. En navegador normal se conserva el desenfoque de `::backdrop`. El bloqueo de fondo es compartido por modales y menú móvil, admite anidamiento y restaura los estilos y el desplazamiento al cerrar el último diálogo.
+
+En teléfono y modo app, la ficha se ancla a los márgenes superiores y usa la altura estable `svh`; [WebKit distingue esta unidad de la altura dinámica `dvh`](https://webkit.org/blog/12445/new-webkit-features-in-safari-15-4/). Los cambios de pestaña desplazan solo el contenido de la ficha antes del repintado, y el enfoque programático solicita `preventScroll`. La navegación instalada usa History API y conserva los eventos de retroceso. El HTML se revalida para recibir nuevas compilaciones.
+
+Verificación con datos sintéticos y modalidad app simulada: modal fuera del fondo filtrado, desenfoque de 6 px solo en el fondo, bloqueo de página conservado al cerrar un modal secundario, restauración del fondo tras descartar cambios, retroceso entre pestañas y anchura de 390 px sin desbordamiento. Después de publicar y recrear el acceso directo, el usuario confirmó que las pestañas de la ficha funcionan sin parpadeo en su iPhone 13.
+
+## Icono de Espacio TO
+
+El logotipo proporcionado se exporta con transparencia exterior, manteniendo el texto blanco interior. Se utiliza en la marca de la interfaz, favicon PNG de 32 px, icono Apple de 180 px e iconos de manifiesto de 192 y 512 px. La fuente transparente queda en `public/icons/espacio-to-master.png`. El icono ya añadido a la pantalla de inicio puede requerir recrear el acceso directo para actualizar sus metadatos.

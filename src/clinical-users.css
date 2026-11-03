@@ -109,6 +109,11 @@
 .clinical-modal[open] { display: flex; flex-direction: column; }
 .clinical-modal:not(.form-modal) { height: min(820px,calc(100dvh - 64px)); }
 .clinical-modal::backdrop { background: var(--overlay); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+/* Installed iOS web apps keep the blur on a separate, static background layer.
+   Dialogs are portalled to body so they never become children of this filter. */
+html[data-display-mode=standalone][data-modal-open=true] .workspace { filter: blur(6px); }
+html[data-display-mode=standalone] .clinical-modal::backdrop { backdrop-filter: none; -webkit-backdrop-filter: none; }
+html[data-display-mode=standalone] .clinical-modal { max-height: calc(100svh - 64px); }
 .clinical-modal-header { padding: 24px 28px 0; background: var(--surface); border-bottom: 1px solid var(--line); flex-shrink: 0; }
 .modal-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .modal-eyebrow { display: flex; align-items: center; gap: 7px; margin: 0 0 8px; color: var(--accent); font-size: 12px; font-weight: 550; }
@@ -149,6 +154,8 @@
 @media(max-width:600px) {
   .clinical-modal { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border-radius: 16px; }
   .clinical-modal:not(.form-modal) { height: calc(100dvh - 24px); }
+  html[data-display-mode=standalone] .clinical-modal { max-height: calc(100svh - 24px); }
+  html[data-display-mode=standalone] .clinical-modal:not(.form-modal) { position: fixed; inset: 12px 12px auto; margin: 0; width: auto; height: calc(100svh - 24px); }
   .clinical-modal-header { padding: 20px 18px 0; }
   .clinical-modal-body { padding: 20px 16px; }
   .clinical-modal h2 { font-size: 22px; }

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowLeft, CalendarDays, Check, ClipboardList, Pencil, Plus, Save, X } from 'lucide-react';
 import { clinicalSections } from '../shared/clinical-fields';
 import { emptySession, maxSessionAmount, sessionFields } from '../shared/session-fields';
@@ -106,10 +107,10 @@ export function ClinicalRecordModal({ id, record, loading, error, retry, creatin
     const unlock = lockBodyScroll();
     const dialog = dialogRef.current;
     dialog.showModal();
-    titleRef.current?.focus();
-    return () => { dialog.close(); unlock(); if (trigger?.isConnected) trigger.focus(); };
+    titleRef.current?.focus({ preventScroll: true });
+    return () => { dialog.close(); unlock(); if (trigger?.isConnected) trigger.focus({ preventScroll: true }); };
   }, []);
-  useEffect(() => { if (creatingSession) titleRef.current?.focus(); scrollRef.current?.scrollTo(0, 0); }, [creatingSession, sessionId, activeView, reportEditing, planEditing]);
+  useLayoutEffect(() => { if (creatingSession) titleRef.current?.focus({ preventScroll: true }); if (scrollRef.current) scrollRef.current.scrollTop = 0; }, [creatingSession, sessionId, activeView, reportEditing, planEditing]);
   const returnToRecord = () => navigate(`/usuarios/${id}`);
   const close = () => { if (!saving) navigate('/usuarios'); };
   async function saveSession(values) {
@@ -118,7 +119,7 @@ export function ClinicalRecordModal({ id, record, loading, error, retry, creatin
     onDirtyChange(false); setRefresh(v => v + 1); setNotice(sessionId ? 'Sesión actualizada correctamente.' : 'Sesión guardada correctamente.');
     navigate(`/usuarios/${id}/sesiones`, true);
   }
-  return <dialog ref={dialogRef} className="clinical-modal" aria-labelledby="clinical-modal-title" onCancel={event => { event.preventDefault(); close(); }} onClick={event => {
+  return createPortal(<dialog ref={dialogRef} className="clinical-modal" aria-labelledby="clinical-modal-title" onCancel={event => { event.preventDefault(); close(); }} onClick={event => {
     if (event.target !== dialogRef.current) return;
     const rect = dialogRef.current.getBoundingClientRect();
     if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) close();
@@ -135,5 +136,5 @@ export function ClinicalRecordModal({ id, record, loading, error, retry, creatin
         {clinicalSections.map(section => <section className="clinical-section" key={section.title}><h3>{section.title}</h3><dl>{section.fields.map(field => <div key={field.key}><dt>{field.label}</dt><dd>{field.key === 'age' ? `${record.age} años` : record[field.key] || <span className="missing-value">Sin registrar</span>}</dd></div>)}</dl></section>)}
       </div>)}
     </div>
-  </dialog>;
+  </dialog>, document.body);
 }
