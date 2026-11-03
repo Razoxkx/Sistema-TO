@@ -22,7 +22,7 @@ function ProfilePhoto({ user }) {
 
 function SidebarContent({ user, collapsed, mobile, onToggle, onClose, onLogout, busy, route, navigate }) {
   return <>
-    <div className="sidebar-brand-row"><Brand onNavigate={() => { if (navigate('/inicio')) onClose(); }}/>
+    <div className="sidebar-brand-row"><Brand development={import.meta.env.DEV || import.meta.env.VITE_APP_ENV === 'development'} onNavigate={() => { if (navigate('/inicio')) onClose(); }}/>
       <button className="icon-button sidebar-toggle" onClick={mobile ? onClose : onToggle}
         aria-label={mobile ? 'Cerrar menú' : collapsed ? 'Abrir sidebar' : 'Retraer sidebar'}
         title={mobile ? 'Cerrar menú' : collapsed ? 'Abrir sidebar' : 'Retraer sidebar'}
