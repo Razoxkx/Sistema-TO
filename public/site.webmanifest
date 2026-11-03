@@ -1,0 +1,15 @@
+{
+  "id": "/",
+  "name": "Espacio TO",
+  "short_name": "Espacio TO",
+  "lang": "es",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#eaf2ec",
+  "theme_color": "#eaf2ec",
+  "icons": [
+    { "src": "/icons/espacio-to-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/espacio-to-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
