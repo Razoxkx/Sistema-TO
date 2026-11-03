@@ -3,9 +3,22 @@ import { ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, CircleAlert, Cli
 import { financeApi } from './api';
 import { currentMonth, shiftMonth, validMonth } from '../shared/finance-month';
 import './finances.css';
+import { useViewData } from './ViewData';
 
 const money = amount => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(amount);
 const monthLabel = (month, short = false) => new Intl.DateTimeFormat('es-CL', { month: short ? 'short' : 'long', ...(short ? {} : { year: 'numeric' }), timeZone: 'UTC' }).format(new Date(`${month}-01T12:00:00Z`));
+function FinanceLoading({ month }) {
+  return <div className="finance-loading">
+    <p className="sr-only" role="status">Cargando finanzas…</p>
+    <div aria-hidden="true">
+      <div className="finance-summary">
+        {[['Ingresos del mes', Wallet, monthLabel(month)], ['Sesiones registradas', ClipboardList, 'Durante este período'], ['Usuarios atendidos', Users, 'Con sesiones en el mes']].map(([label, Icon, note], index) => <div key={label} className={`finance-stat${index === 0 ? ' finance-stat-total' : ''}`}><div className="finance-stat-label"><Icon size={18}/>{label}</div><strong>—{index === 0 && <span>CLP</span>}</strong><p>{note}</p></div>)}
+      </div>
+      <div className="finance-panel"><div className="finance-section-heading"><div><h2>Ingresos por usuario</h2><p className="finance-period-label">{monthLabel(month)}</p></div></div><div className="finance-placeholder-row"><span/><span/><span/></div></div>
+      <div className="finance-panel"><div className="finance-section-heading"><div><h2>Historial mensual</h2><p>Selecciona un mes para ver su detalle.</p></div><span>{month.slice(0, 4)}</span></div><div className="finance-month-grid">{Array.from({ length: 12 }, (_, index) => `${month.slice(0, 4)}-${String(index + 1).padStart(2, '0')}`).map(value => <div key={value} className="finance-month"><span>{monthLabel(value, true)}</span><strong>—</strong></div>)}</div></div>
+    </div>
+  </div>;
+}
 export function Finances({ route, navigate, service = financeApi }) {
   const [todayMonth, setTodayMonth] = useState(currentMonth);
   const specifiedMonth = route.split('/')[2];
@@ -13,29 +26,28 @@ export function Finances({ route, navigate, service = financeApi }) {
   const valid = validMonth(month);
   const [paging, setPaging] = useState({ month, page: 1 });
   const page = paging.month === month ? paging.page : 1;
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [refresh, setRefresh] = useState(0);
+  const { data, loading, error } = useViewData(service, JSON.stringify(['finances', month, page]), signal => valid ? service.get(month, { page, signal }) : Promise.resolve(null), { refresh });
   const titleRef = useRef(null);
   const selectedMonthRef = useRef(null);
   const restoreMonthFocus = useRef(false);
   useEffect(() => { titleRef.current?.focus(); }, []);
   useEffect(() => {
     const checkMonth = () => setTodayMonth(currentMonth());
-    const resume = () => { if (!document.hidden) { checkMonth(); setRefresh(value => value + 1); } };
+    let lastResume = 0;
+    const resume = () => {
+      if (document.hidden) return;
+      checkMonth();
+      // Browsers can emit both visibilitychange and focus for the same return.
+      if (Date.now() - lastResume < 500) return;
+      lastResume = Date.now();
+      setRefresh(value => value + 1);
+    };
     const timer = setInterval(checkMonth, 60000);
     document.addEventListener('visibilitychange', resume);
     window.addEventListener('focus', resume);
     return () => { clearInterval(timer); document.removeEventListener('visibilitychange', resume); window.removeEventListener('focus', resume); };
   }, []);
-  useEffect(() => {
-    if (!valid) return;
-    const controller = new AbortController(); let active = true;
-    setLoading(true); setError(null); setData(null);
-    service.get(month, { page, signal: controller.signal }).then(result => { if (active) setData(result); }).catch(err => { if (active && err.name !== 'AbortError') setError(err); }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; controller.abort(); };
-  }, [month, page, valid, refresh, service]);
   useEffect(() => {
     if (!loading && restoreMonthFocus.current && data?.month === month) {
       selectedMonthRef.current?.focus();
@@ -43,7 +55,7 @@ export function Finances({ route, navigate, service = financeApi }) {
     }
   }, [loading, data, month]);
   const chooseMonth = value => { if (validMonth(value)) navigate(`/finanzas/${value}`); };
-  return <div className="finances">
+  return <div className="finances" aria-busy={loading}>
     <div className="page-heading"><div><h1 ref={titleRef} tabIndex={-1}>Finanzas</h1><p>Los ingresos de tus atenciones, mes a mes.</p></div></div>
     <div className="finance-period-bar">
       <div className="finance-period-control"><CalendarDays size={18} aria-hidden="true"/><div><label htmlFor="finance-month">Período</label><input id="finance-month" type="month" value={valid ? month : ''} min="1900-01" max="2100-12" onInput={event => chooseMonth(event.currentTarget.value)} onChange={event => chooseMonth(event.target.value)}/></div></div>
@@ -51,9 +63,9 @@ export function Finances({ route, navigate, service = financeApi }) {
     </div>
     {!valid ? <div className="error-message" role="alert"><p>El período no es válido. Selecciona un mes para continuar.</p></div> : <>
       <p className="finance-basis">Se suman los valores de las sesiones realizadas según su fecha de atención, en pesos chilenos.</p>
-      {loading && <p className="data-status" role="status">Cargando finanzas…</p>}
+      {loading && !data && <FinanceLoading month={month}/>}
       {error && <div className="error-message" role="alert"><p>{error.message}</p>{error.status === 401 ? <button onClick={() => location.reload()}>Volver a iniciar sesión</button> : <button onClick={() => setRefresh(v => v + 1)}>Volver a intentar</button>}</div>}
-      {!loading && !error && data?.month === month && <>
+      {data?.month === month && <>
         <section className="finance-summary" aria-label={`Resumen de ${monthLabel(month)}`}>
           <div className="finance-stat finance-stat-total"><div className="finance-stat-label"><Wallet size={18} aria-hidden="true"/>Ingresos del mes</div><strong>{money(data.summary.totalAmount)}<span>CLP</span></strong><p>{monthLabel(month)}</p></div>
           <div className="finance-stat"><div className="finance-stat-label"><ClipboardList size={18} aria-hidden="true"/>Sesiones registradas</div><strong>{data.summary.sessionCount}</strong><p>Durante este período</p></div>

@@ -48,6 +48,8 @@ Documentación oficial: [botón de Google Identity Services](https://developers.
 
 ## Ejecutar todo en Docker
 
+Para el servidor Ubuntu ya migrado y su acceso por Tailscale, consulta [la guía del servidor](docs/ubuntu-server.md). Ese despliegue usa `compose.server.yaml`, con base independiente y acceso privado en `http://100.94.70.111:5173`.
+
 Con `.env` configurado, detén `npm run dev` para liberar el puerto 5173 y ejecuta:
 
 ```bash

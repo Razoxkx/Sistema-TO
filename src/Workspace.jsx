@@ -6,6 +6,7 @@ import { Finances } from './Finances';
 import { Calendar } from './Calendar';
 import { LocalAccount } from './LocalAccount';
 import { ThemeSelect } from './Theme';
+import { ViewDataProvider } from './ViewData';
 import './workspace.css';
 
 function ProfilePhoto({ user }) {
@@ -19,7 +20,7 @@ function ProfilePhoto({ user }) {
 
 function SidebarContent({ user, collapsed, mobile, onToggle, onClose, onLogout, busy, route, navigate }) {
   return <>
-    <div className="sidebar-brand-row"><Brand/>
+    <div className="sidebar-brand-row"><Brand onNavigate={() => { if (navigate('/inicio')) onClose(); }}/>
       <button className="icon-button sidebar-toggle" onClick={mobile ? onClose : onToggle}
         aria-label={mobile ? 'Cerrar menú' : collapsed ? 'Abrir sidebar' : 'Retraer sidebar'}
         title={mobile ? 'Cerrar menú' : collapsed ? 'Abrir sidebar' : 'Retraer sidebar'}
@@ -116,7 +117,7 @@ export function Workspace({ user, onLogout, busy, error, clinicalService, financ
     if (dirtyRef.current) setPendingLeave({ run: onLogout });
     else onLogout();
   }, busy, onClose: closeMenu, route, navigate };
-  return <div className={`workspace${collapsed ? ' sidebar-collapsed' : ''}`}>
+  return <ViewDataProvider key={user.id}><div className={`workspace${collapsed ? ' sidebar-collapsed' : ''}`}>
     <a href="#workspace-main" className="skip-link" onClick={event => { event.preventDefault(); document.getElementById('workspace-main')?.focus(); }}>Ir al contenido</a>
     <aside id="app-sidebar" className="sidebar desktop-sidebar" aria-label="Menú de Espacio TO">
       <SidebarContent {...shared} collapsed={collapsed} onToggle={() => setCollapsed(value => !value)}/>
@@ -139,5 +140,5 @@ export function Workspace({ user, onLogout, busy, error, clinicalService, financ
     {mobileOpen && <dialog ref={dialogRef} id="mobile-sidebar" className="sidebar mobile-sidebar" aria-label="Menú de Espacio TO" onCancel={closeMenu} onClick={event => { if (event.target === dialogRef.current && event.clientX >= dialogRef.current.getBoundingClientRect().right) closeMenu(); }}>
       <SidebarContent {...shared} mobile/>
     </dialog>}
-  </div>;
+  </div></ViewDataProvider>;
 }
