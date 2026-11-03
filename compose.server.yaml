@@ -1,0 +1,63 @@
+# Private HTTP deployment: publish only on the server's Tailscale address and loopback.
+# NODE_ENV=production requires HTTPS in server/index.js; keep the existing private HTTP flow.
+name: espacio-to
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-espacio_to}
+      MYSQL_USER: ${DB_USER:-espacio_to}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Configura DB_PASSWORD en .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Configura MYSQL_ROOT_PASSWORD en .env}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysql -h localhost -u root -e 'SELECT 1' >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  api:
+    build:
+      context: .
+      target: api
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3001
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-espacio_to}
+      DB_USER: ${DB_USER:-espacio_to}
+      DB_PASSWORD: ${DB_PASSWORD:?Configura DB_PASSWORD en .env}
+      SESSION_SECRET: ${SESSION_SECRET:?Configura SESSION_SECRET en .env}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      APP_ORIGIN: ${APP_ORIGIN:?Configura APP_ORIGIN en .env}
+      APP_ALLOWED_ORIGINS: ${APP_ALLOWED_ORIGINS:-}
+      LOCAL_AUTH_ENABLED: ${LOCAL_AUTH_ENABLED:-true}
+      ALLOWED_EMAILS: ${ALLOWED_EMAILS:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 15s
+      retries: 4
+  web:
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    ports:
+      - "${WEB_BIND_ADDRESS:?Configura la IP de Tailscale}:5173:80"
+      - "127.0.0.1:5173:80"
+    depends_on:
+      api:
+        condition: service_healthy
+volumes:
+  mysql_data:
