@@ -9,6 +9,7 @@ import { LocalAccount } from './LocalAccount';
 import { ThemeSelect } from './Theme';
 import { ViewDataProvider } from './ViewData';
 import { lockBodyScroll } from './modal-scroll';
+import { isDevBranch } from 'virtual:app-branch';
 import './workspace.css';
 
 function ProfilePhoto({ user }) {
@@ -22,7 +23,7 @@ function ProfilePhoto({ user }) {
 
 function SidebarContent({ user, collapsed, mobile, onToggle, onClose, onLogout, busy, route, navigate }) {
   return <>
-    <div className="sidebar-brand-row"><Brand onNavigate={() => { if (navigate('/inicio')) onClose(); }}/>
+    <div className="sidebar-brand-row"><Brand development={isDevBranch} onNavigate={() => { if (navigate('/inicio')) onClose(); }}/>
       <button className="icon-button sidebar-toggle" onClick={mobile ? onClose : onToggle}
         aria-label={mobile ? 'Cerrar menú' : collapsed ? 'Abrir sidebar' : 'Retraer sidebar'}
         title={mobile ? 'Cerrar menú' : collapsed ? 'Abrir sidebar' : 'Retraer sidebar'}
