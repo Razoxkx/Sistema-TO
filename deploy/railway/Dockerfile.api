@@ -1,0 +1,10 @@
+FROM node:24-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+COPY --chown=node:node server ./server
+COPY --chown=node:node shared ./shared
+USER node
+EXPOSE 3001
+CMD ["node", "server/index.js"]
