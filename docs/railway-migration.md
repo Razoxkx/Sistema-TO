@@ -27,7 +27,7 @@ API:
 NODE_ENV=production
 HOST=::
 PORT=3001
-APP_ORIGIN=https://sistema-to-production.up.railway.app
+APP_ORIGIN=https://sistema-to.up.railway.app
 LOCAL_AUTH_ENABLED=true
 DB_HOST=${{MySQL.RAILWAY_PRIVATE_DOMAIN}}
 DB_PORT=3306
