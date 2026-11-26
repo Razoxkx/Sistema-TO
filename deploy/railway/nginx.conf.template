@@ -1,0 +1,33 @@
+resolver ${DNS_RESOLVERS} valid=10s;
+map $http_x_forwarded_proto $external_proto {
+  default $scheme;
+  https https;
+}
+server {
+  listen ${PORT};
+  listen [::]:${PORT};
+  server_name _;
+  root /usr/share/nginx/html;
+  index index.html;
+  add_header X-Content-Type-Options nosniff always;
+  add_header Referrer-Policy strict-origin-when-cross-origin always;
+  add_header X-Frame-Options SAMEORIGIN always;
+  add_header Cross-Origin-Opener-Policy same-origin-allow-popups always;
+  location = /healthz {
+    access_log off;
+    default_type application/json;
+    return 200 '{"status":"ok"}';
+  }
+  location /api/ {
+    # Runtime DNS permits API restarts and avoids coupling the two boot orders.
+    set $api_upstream "${API_UPSTREAM}";
+    proxy_pass http://$api_upstream;
+    proxy_read_timeout 120s;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $external_proto;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  }
+  location = /index.html { expires -1; try_files /index.html =404; }
+  location = /site.webmanifest { default_type application/manifest+json; expires -1; try_files $uri =404; }
+  location / { try_files $uri $uri/ /index.html; }
+}

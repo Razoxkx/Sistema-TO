@@ -1,0 +1,19 @@
+FROM node:24-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY index.html vite.config.js ./
+COPY src ./src
+COPY shared ./shared
+COPY public ./public
+ARG RAILWAY_GIT_BRANCH
+ARG APP_GIT_BRANCH
+RUN APP_GIT_BRANCH="${RAILWAY_GIT_BRANCH:-$APP_GIT_BRANCH}" npm run build
+
+FROM nginx:stable-alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY deploy/railway/nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY deploy/railway/configure-web.sh /docker-entrypoint.d/19-railway-config.envsh
+RUN chmod -R a+rX /usr/share/nginx/html && chmod 755 /docker-entrypoint.d/19-railway-config.envsh
+ENV PORT=8080
+EXPOSE 8080

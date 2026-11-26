@@ -31,5 +31,5 @@ const app = createApp({ config, repository, reportGenerator: createReportGenerat
   const ticket = await client.verifyIdToken({ idToken: credential, audience: config.clientId });
   return ticket.getPayload();
 } });
-const server = app.listen(Number(env.PORT || 3001), '0.0.0.0', () => console.log(`API Espacio TO: http://localhost:${env.PORT || 3001}`));
+const server = app.listen(Number(env.PORT || 3001), env.HOST || '0.0.0.0', () => console.log(`API Espacio TO: http://localhost:${env.PORT || 3001}`));
 for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => server.close(async () => { await repository.close(); process.exit(0); }));
